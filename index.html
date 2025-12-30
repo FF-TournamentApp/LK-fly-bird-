@@ -252,6 +252,12 @@
         </div>
     </div>
 
+    <!-- Hidden images for preloading -->
+    <div style="display: none;">
+        <img id="birdImage" src="https://iili.io/fXCiFcJ.md.png" alt="Bird">
+        <img id="pipeImage" src="https://iili.io/fXCQ3Fe.md.jpg" alt="Pipe">
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script>
         // Game variables
@@ -259,34 +265,41 @@
         let startScreen, gameOverScreen, startBtn, restartBtn;
         let scoreDisplay, finalScore, bestScore, highScoreValue;
         
+        // Load images
+        const birdImg = new Image();
+        birdImg.src = "https://iili.io/fXCiFcJ.md.png";
+        
+        const pipeImg = new Image();
+        pipeImg.src = "https://iili.io/fXCQ3Fe.md.jpg";
+        
         // Game state
         let game = {
             running: false,
             score: 0,
             highScore: localStorage.getItem('lkFlyBirdHighScore') || 0,
-            speed: 3,
-            soundEnabled: true
+            speed: 2, // Reduced initial speed
+            soundEnabled: true,
+            imagesLoaded: 0,
+            totalImages: 2
         };
         
-        // Bird properties
+        // Bird properties - LOWER GRAVITY, HIGHER LIFT
         const bird = {
             x: 150,
             y: 300,
             width: 40,
-            height: 30,
-            gravity: 0.6,
-            lift: -12,
+            height: 40,
+            gravity: 0.3, // Reduced from 0.6
+            lift: -15, // Increased from -12
             velocity: 0,
-            color: '#FFD700',
-            wingAngle: 0,
-            wingSpeed: 0.3
+            rotation: 0
         };
         
         // Pipes array
         let pipes = [];
-        const pipeWidth = 70;
-        const pipeGap = 150;
-        const pipeFrequency = 120; // frames between pipes
+        const pipeWidth = 80;
+        const pipeGap = 180; // Increased gap
+        const pipeFrequency = 130; // frames between pipes (increased)
         let frameCount = 0;
         
         // Initialize canvas size
@@ -300,6 +313,27 @@
                 bird.y = canvas.height / 2;
             }
         }
+        
+        // Check if images are loaded
+        function checkImagesLoaded() {
+            game.imagesLoaded++;
+            if (game.imagesLoaded === game.totalImages) {
+                console.log('All images loaded successfully');
+            }
+        }
+        
+        // Handle image loading errors
+        birdImg.onload = checkImagesLoaded;
+        birdImg.onerror = function() {
+            console.log('Failed to load bird image');
+            checkImagesLoaded();
+        };
+        
+        pipeImg.onload = checkImagesLoaded;
+        pipeImg.onerror = function() {
+            console.log('Failed to load pipe image');
+            checkImagesLoaded();
+        };
         
         // Initialize game
         function init() {
@@ -323,14 +357,14 @@
             
             // Reset game state
             game.score = 0;
-            game.speed = 3;
+            game.speed = 2; // Reset to reduced speed
             scoreDisplay.textContent = game.score;
             
             // Reset bird
             bird.x = canvas.width * 0.2;
             bird.y = canvas.height / 2;
             bird.velocity = 0;
-            bird.wingAngle = 0;
+            bird.rotation = 0;
             
             // Clear pipes
             pipes = [];
@@ -341,74 +375,88 @@
             gameOverScreen.classList.add('hidden');
         }
         
-        // Draw bird
+        // Draw bird using image
         function drawBird() {
             ctx.save();
             
-            // Draw bird body
-            ctx.fillStyle = bird.color;
-            ctx.beginPath();
-            ctx.ellipse(bird.x, bird.y, bird.width/2, bird.height/2, 0, 0, Math.PI * 2);
-            ctx.fill();
+            // Move to bird position and rotate based on velocity
+            ctx.translate(bird.x, bird.y);
             
-            // Draw bird eye
-            ctx.fillStyle = 'black';
-            ctx.beginPath();
-            ctx.arc(bird.x + 10, bird.y - 5, 4, 0, Math.PI * 2);
-            ctx.fill();
+            // Rotate bird based on velocity (more realistic flight)
+            bird.rotation = bird.velocity * 0.03;
+            ctx.rotate(bird.rotation);
             
-            // Draw bird beak
-            ctx.fillStyle = '#FF6600';
-            ctx.beginPath();
-            ctx.moveTo(bird.x + 20, bird.y);
-            ctx.lineTo(bird.x + 35, bird.y);
-            ctx.lineTo(bird.x + 20, bird.y + 8);
-            ctx.fill();
-            
-            // Draw bird wing (animated)
-            ctx.fillStyle = '#FFAA00';
-            ctx.save();
-            ctx.translate(bird.x - 5, bird.y + 5);
-            ctx.rotate(Math.sin(bird.wingAngle) * 0.5);
-            ctx.beginPath();
-            ctx.ellipse(0, 0, 15, 10, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-            
-            // Update wing angle for animation
-            if (game.running) {
-                bird.wingAngle += bird.wingSpeed;
+            // Draw bird image if loaded, otherwise draw placeholder
+            if (birdImg.complete && birdImg.naturalHeight !== 0) {
+                ctx.drawImage(birdImg, -bird.width/2, -bird.height/2, bird.width, bird.height);
+            } else {
+                // Fallback bird drawing
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, bird.width/2, bird.height/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw bird eye
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(10, -5, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw bird beak
+                ctx.fillStyle = '#FF6600';
+                ctx.beginPath();
+                ctx.moveTo(20, 0);
+                ctx.lineTo(35, 0);
+                ctx.lineTo(20, 8);
+                ctx.fill();
             }
             
             ctx.restore();
         }
         
-        // Draw pipes
+        // Draw pipes using image
         function drawPipes() {
             pipes.forEach(pipe => {
-                // Draw top pipe
-                ctx.fillStyle = '#2E8B57';
-                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+                // Draw top pipe (flipped)
+                ctx.save();
+                ctx.translate(pipe.x + pipeWidth/2, pipe.top/2);
+                ctx.scale(1, -1); // Flip vertically
                 
-                // Draw top pipe cap
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(pipe.x - 5, pipe.top - 20, pipeWidth + 10, 20);
+                if (pipeImg.complete && pipeImg.naturalHeight !== 0) {
+                    // Draw pipe image for top pipe (flipped)
+                    ctx.drawImage(
+                        pipeImg, 
+                        -pipeWidth/2, 
+                        -pipe.top/2, 
+                        pipeWidth, 
+                        pipe.top
+                    );
+                } else {
+                    // Fallback pipe drawing
+                    ctx.fillStyle = '#2E8B57';
+                    ctx.fillRect(-pipeWidth/2, -pipe.top/2, pipeWidth, pipe.top);
+                    
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(-pipeWidth/2 - 5, -pipe.top/2, pipeWidth + 10, 20);
+                }
+                ctx.restore();
                 
                 // Draw bottom pipe
-                ctx.fillStyle = '#2E8B57';
-                ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
-                
-                // Draw bottom pipe cap
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(pipe.x - 5, pipe.bottom, pipeWidth + 10, 20);
-                
-                // Draw LK logo on pipes
-                if (pipe.hasLogo) {
-                    ctx.fillStyle = '#FFD700';
-                    ctx.font = 'bold 20px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('LK', pipe.x + pipeWidth/2, pipe.top - 40);
-                    ctx.fillText('LK', pipe.x + pipeWidth/2, pipe.bottom + 30);
+                if (pipeImg.complete && pipeImg.naturalHeight !== 0) {
+                    ctx.drawImage(
+                        pipeImg, 
+                        pipe.x, 
+                        pipe.bottom, 
+                        pipeWidth, 
+                        canvas.height - pipe.bottom
+                    );
+                } else {
+                    // Fallback pipe drawing
+                    ctx.fillStyle = '#2E8B57';
+                    ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+                    
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(pipe.x - 5, pipe.bottom, pipeWidth + 10, 20);
                 }
             });
         }
@@ -463,14 +511,12 @@
                 const minTop = canvas.height * 0.1;
                 const maxTop = canvas.height * 0.7;
                 const top = Math.floor(Math.random() * (maxTop - minTop)) + minTop;
-                const hasLogo = Math.random() > 0.5;
                 
                 pipes.push({
                     x: canvas.width,
                     top: top,
                     bottom: top + pipeGap,
-                    passed: false,
-                    hasLogo: hasLogo
+                    passed: false
                 });
             }
             
@@ -484,9 +530,9 @@
                     game.score++;
                     scoreDisplay.textContent = game.score;
                     
-                    // Increase speed slightly every 5 pipes
+                    // Increase speed slightly every 5 pipes (less aggressive)
                     if (game.score % 5 === 0) {
-                        game.speed += 0.2;
+                        game.speed += 0.1; // Reduced from 0.2
                     }
                     
                     // Play score sound if enabled
@@ -508,11 +554,13 @@
         function checkCollision() {
             // Ground collision
             if (bird.y + bird.height/2 >= canvas.height - 30) {
+                playKissSound();
                 return true;
             }
             
             // Ceiling collision
             if (bird.y - bird.height/2 <= 0) {
+                playKissSound();
                 return true;
             }
             
@@ -523,6 +571,7 @@
                     bird.x - bird.width/2 < pipe.x + pipeWidth &&
                     (bird.y - bird.height/2 < pipe.top || bird.y + bird.height/2 > pipe.bottom)
                 ) {
+                    playKissSound();
                     return true;
                 }
             }
@@ -532,14 +581,19 @@
         
         // Update bird
         function updateBird() {
-            // Apply gravity
+            // Apply gravity (reduced)
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
+            
+            // Limit maximum falling speed
+            if (bird.velocity > 10) {
+                bird.velocity = 10;
+            }
         }
         
         // Make bird flap
         function flap() {
-            bird.velocity = bird.lift;
+            bird.velocity = bird.lift; // Increased upward force
             
             // Play flap sound if enabled
             if (game.soundEnabled) {
@@ -604,11 +658,6 @@
             setTimeout(() => {
                 gameOverScreen.classList.remove('hidden');
             }, 500);
-            
-            // Play game over sound if enabled
-            if (game.soundEnabled) {
-                playGameOverSound();
-            }
         }
         
         // Sound functions
@@ -621,14 +670,14 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 
-                oscillator.frequency.value = 800;
+                oscillator.frequency.value = 600; // Lower pitch
                 oscillator.type = 'sine';
                 
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
                 
                 oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.1);
+                oscillator.stop(audioContext.currentTime + 0.15);
             } catch (e) {
                 // Audio context not supported
             }
@@ -643,7 +692,7 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 
-                oscillator.frequency.value = 1200;
+                oscillator.frequency.value = 1000;
                 oscillator.type = 'sine';
                 
                 gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
@@ -656,25 +705,33 @@
             }
         }
         
-        function playGameOverSound() {
+        function playKissSound() {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
                 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 300;
-                oscillator.type = 'sawtooth';
-                
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.5);
+                // Create kiss sound using multiple oscillators
+                for (let i = 0; i < 3; i++) {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    // Different frequencies for kiss sound
+                    oscillator.frequency.value = 200 + i * 100;
+                    oscillator.type = 'sine';
+                    
+                    // Quick attack and decay for kiss sound
+                    const startTime = audioContext.currentTime + i * 0.05;
+                    gainNode.gain.setValueAtTime(0, startTime);
+                    gainNode.gain.linearRampToValueAtTime(0.1, startTime + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.3);
+                }
             } catch (e) {
-                // Audio context not supported
+                console.log("Audio not supported");
             }
         }
         
@@ -690,6 +747,10 @@
             canvas.addEventListener('click', () => {
                 if (game.running) {
                     flap();
+                } else if (startScreen.classList.contains('hidden') && !gameOverScreen.classList.contains('hidden')) {
+                    // If game over screen is showing, restart
+                    init();
+                    startGame();
                 }
             });
             
@@ -701,6 +762,12 @@
                 
                 // Start game with space if on start screen
                 if (e.code === 'Space' && !game.running && !gameOverScreen.classList.contains('hidden')) {
+                    startGame();
+                }
+                
+                // Restart game with R key
+                if (e.code === 'KeyR' && !game.running && gameOverScreen.classList.contains('hidden')) {
+                    init();
                     startGame();
                 }
             });
