@@ -281,9 +281,10 @@
             running: false,
             score: 0,
             highScore: localStorage.getItem('lkFlyBirdHighScore') || 0,
-            speed: 1, // Ultra slow initial speed
+            speed: 1,
             imagesLoaded: 0,
-            totalImages: 2
+            totalImages: 2,
+            lastPipeX: 0
         };
         
         // Bird properties - ULTRA SLOW PHYSICS
@@ -292,17 +293,18 @@
             y: 300,
             width: 50, 
             height: 50,
-            gravity: 0.08, // EXTREMELY LOW gravity - bird falls VERY VERY slowly
-            lift: -4, // VERY SMALL jump - barely goes up at all
+            gravity: 0.08,
+            lift: -4,
             velocity: 0,
             rotation: 0
         };
         
-        // Pipes array
+        // Pipes array - LARGE GAPS BETWEEN PIPES
         let pipes = [];
         const pipeWidth = 80;
-        const pipeGap = 240; // Very large gap for super easy gameplay
-        const pipeFrequency = 180; // Extremely slow pipe generation
+        const pipeGap = 280; // VERY LARGE gap between top and bottom pipe
+        const minPipeSpacing = 400; // Minimum space between pipe pairs (INCREASED)
+        const maxPipeSpacing = 600; // Maximum space between pipe pairs (INCREASED)
         let frameCount = 0;
         
         // Collision tracker
@@ -387,14 +389,14 @@
             setTimeout(() => playBeepSound(1000, 0.1, 0.08), 50);
         }
         
-        // Play collision sound ("Oh my god wow" simulation)
+        // Play collision sound
         function playCollisionSound() {
             if (!soundEnabled || !audioContext) return;
             
             try {
-                // Create multiple oscillators for "Oh my god wow" effect
-                const frequencies = [200, 300, 250, 150];
-                const durations = [0.2, 0.3, 0.25, 0.4];
+                // Create multiple oscillators for collision effect
+                const frequencies = [180, 220, 160];
+                const durations = [0.3, 0.2, 0.4];
                 
                 for (let i = 0; i < frequencies.length; i++) {
                     setTimeout(() => {
@@ -412,7 +414,7 @@
                         
                         oscillator.start();
                         oscillator.stop(audioContext.currentTime + durations[i]);
-                    }, i * 100);
+                    }, i * 120);
                 }
             } catch (e) {
                 console.log("Collision sound error:", e);
@@ -444,7 +446,8 @@
             
             // Reset game state
             game.score = 0;
-            game.speed = 1; // Reset to ultra slow speed
+            game.speed = 1;
+            game.lastPipeX = canvas.width;
             scoreDisplay.textContent = game.score;
             
             // Reset bird
@@ -473,7 +476,7 @@
             ctx.translate(bird.x, bird.y);
             
             // Very gentle rotation
-            bird.rotation = bird.velocity * 0.005; // Even less rotation
+            bird.rotation = bird.velocity * 0.005;
             ctx.rotate(bird.rotation);
             
             // Draw bird image if loaded, otherwise draw placeholder
@@ -548,6 +551,12 @@
                     ctx.fillStyle = '#228B22';
                     ctx.fillRect(pipe.x - 5, pipe.bottom, pipeWidth + 10, 20);
                 }
+                
+                // Visual indicator of the gap (for debugging)
+                if (false) { // Set to true to see the gap area
+                    ctx.fillStyle = 'rgba(255, 255, 0, 0.1)';
+                    ctx.fillRect(pipe.x, pipe.top, pipeWidth, pipeGap);
+                }
             });
         }
         
@@ -594,16 +603,23 @@
             });
         }
         
-        // Update pipes
+        // Update pipes - WITH LARGE SPACING
         function updatePipes() {
-            // Add new pipe
-            if (frameCount % pipeFrequency === 0) {
-                const minTop = canvas.height * 0.25; // Higher minimum
-                const maxTop = canvas.height * 0.55; // Lower maximum
+            // Check if we should add a new pipe
+            const lastPipe = pipes[pipes.length - 1];
+            const shouldAddPipe = !lastPipe || (canvas.width - lastPipe.x) > minPipeSpacing;
+            
+            // Random chance to add pipe when conditions are met
+            if (shouldAddPipe && frameCount % 60 === 0) {
+                const minTop = canvas.height * 0.2;
+                const maxTop = canvas.height * 0.6;
                 const top = Math.floor(Math.random() * (maxTop - minTop)) + minTop;
                 
+                // Random spacing between pipes
+                const spacing = minPipeSpacing + Math.random() * (maxPipeSpacing - minPipeSpacing);
+                
                 pipes.push({
-                    x: canvas.width,
+                    x: canvas.width + spacing,
                     top: top,
                     bottom: top + pipeGap,
                     passed: false
@@ -620,9 +636,9 @@
                     game.score++;
                     scoreDisplay.textContent = game.score;
                     
-                    // Almost no speed increase
-                    if (game.score % 15 === 0) {
-                        game.speed += 0.01; // Barely noticeable
+                    // Very slight speed increase
+                    if (game.score % 20 === 0) {
+                        game.speed += 0.01;
                     }
                     
                     // Play score sound
@@ -664,7 +680,7 @@
                     // Check if bird touches top or bottom pipe
                     if (birdTop < pipe.top || birdBottom > pipe.bottom) {
                         if (!hasCollided) {
-                            playCollisionSound(); // "Oh my god wow" sound
+                            playCollisionSound();
                             hasCollided = true;
                         }
                         return true;
@@ -675,18 +691,18 @@
             return false;
         }
         
-        // Update bird - ULTRA SLOW PHYSICS
+        // Update bird
         function updateBird() {
-            // Apply EXTREMELY low gravity
+            // Apply extremely low gravity
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
             
-            // Limit maximum falling speed (EXTREMELY slow)
+            // Limit maximum falling speed
             if (bird.velocity > 4) {
                 bird.velocity = 4;
             }
             
-            // Limit upward speed (very low)
+            // Limit upward speed
             if (bird.velocity < -6) {
                 bird.velocity = -6;
             }
@@ -694,7 +710,7 @@
         
         // Make bird flap
         function flap() {
-            bird.velocity = bird.lift; // Very small upward force
+            bird.velocity = bird.lift;
             
             // Play flap sound
             playFlapSound();
@@ -809,12 +825,11 @@
                 }
             });
             
-            // User interaction for audio (required by browsers)
+            // User interaction for audio
             document.addEventListener('click', function initAudioOnClick() {
                 if (audioContext && audioContext.state === 'suspended') {
                     audioContext.resume().then(() => {
                         console.log("Audio resumed after user interaction");
-                        // Play a test sound
                         playBeepSound(300, 0.1, 0.05);
                     });
                 }
