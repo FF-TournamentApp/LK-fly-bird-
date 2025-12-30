@@ -1,16 +1,16 @@
-<!DOCTYPE html>
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LK Fly Bird</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
@@ -18,56 +18,23 @@
             background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            padding: 20px;
-            color: #333;
-        }
-        
-        .game-container {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            max-width: 1000px;
-            width: 100%;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        
-        .game-title {
-            font-size: 3.5rem;
-            color: #fff;
-            text-shadow: 3px 3px 0 #ff9900, 6px 6px 0 rgba(0, 0, 0, 0.2);
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-        }
-        
-        .subtitle {
-            color: #fff;
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-        }
-        
-        .game-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
+            overflow: hidden;
+            padding: 0;
         }
         
         #gameCanvas {
             display: block;
-            margin: 0 auto;
             background-color: #70c5ce;
-            border-radius: 10px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-            border: 8px solid #4a752c;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
             cursor: pointer;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            max-height: 100%;
         }
         
         .ui-overlay {
@@ -84,48 +51,54 @@
         }
         
         .score-display {
-            font-size: 4rem;
+            font-size: 5rem;
             font-weight: bold;
             color: white;
-            text-shadow: 3px 3px 0 #000;
-            margin-top: 20px;
+            text-shadow: 4px 4px 0 #000;
+            margin-top: 40px;
             pointer-events: none;
+            position: absolute;
+            top: 20px;
+            text-align: center;
+            width: 100%;
         }
         
         .start-screen, .game-over-screen {
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgba(0, 0, 0, 0.85);
             padding: 30px;
             border-radius: 15px;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             pointer-events: all;
-            max-width: 80%;
+            max-width: 90%;
+            border: 3px solid #ff9900;
+            box-shadow: 0 0 30px rgba(255, 153, 0, 0.5);
         }
         
         .start-screen h2, .game-over-screen h2 {
-            font-size: 2.5rem;
-            color: #ff6600;
+            font-size: 3.5rem;
+            color: #ff9900;
             margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #000;
         }
         
         .instructions {
-            margin: 20px 0;
-            font-size: 1.2rem;
-            color: #333;
+            margin: 25px 0;
+            font-size: 1.5rem;
+            color: white;
             line-height: 1.5;
         }
         
         .instructions i {
-            color: #ff6600;
-            margin-right: 8px;
+            color: #ff9900;
+            margin-right: 10px;
         }
         
         .start-btn, .restart-btn {
             background: linear-gradient(to bottom, #ff9900, #ff6600);
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 1.5rem;
+            padding: 20px 50px;
+            font-size: 1.8rem;
             border-radius: 50px;
             cursor: pointer;
             margin-top: 20px;
@@ -144,149 +117,148 @@
             box-shadow: 0 4px 0 #cc5200;
         }
         
-        .controls {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-        
-        .control-item {
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            min-width: 200px;
-        }
-        
-        .control-item h3 {
-            color: #ff6600;
-            margin-bottom: 10px;
+        .high-score {
+            font-size: 2rem;
+            color: #ffcc00;
+            margin-top: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000;
         }
         
         .hidden {
             display: none !important;
         }
         
-        .footer {
-            margin-top: 30px;
-            color: white;
+        .game-title {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
             text-align: center;
-            font-size: 1.1rem;
+            font-size: 4rem;
+            color: #fff;
+            text-shadow: 3px 3px 0 #ff9900, 6px 6px 0 rgba(0, 0, 0, 0.5);
+            letter-spacing: 3px;
+            pointer-events: none;
         }
         
-        .footer a {
+        .final-score {
+            font-size: 4rem;
+            color: white;
+            margin: 20px 0;
+            text-shadow: 3px 3px 0 #000;
+        }
+        
+        .best-score {
+            font-size: 2.5rem;
             color: #ffcc00;
-            text-decoration: none;
-        }
-        
-        .footer a:hover {
-            text-decoration: underline;
-        }
-        
-        .high-score {
-            font-size: 1.5rem;
-            color: #ffcc00;
-            margin-top: 10px;
-            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 0 #000;
         }
         
         @media (max-width: 768px) {
             .game-title {
                 font-size: 2.5rem;
-            }
-            
-            #gameCanvas {
-                width: 100%;
-                height: auto;
+                top: 10px;
             }
             
             .score-display {
+                font-size: 3.5rem;
+                top: 10px;
+            }
+            
+            .start-screen h2, .game-over-screen h2 {
+                font-size: 2.5rem;
+            }
+            
+            .instructions {
+                font-size: 1.2rem;
+            }
+            
+            .start-btn, .restart-btn {
+                padding: 15px 30px;
+                font-size: 1.5rem;
+            }
+            
+            .final-score {
                 font-size: 3rem;
             }
             
-            .controls {
-                flex-direction: column;
-                align-items: center;
+            .best-score {
+                font-size: 2rem;
+            }
+            
+            .high-score {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .game-title {
+                font-size: 2rem;
+                top: 5px;
+            }
+            
+            .score-display {
+                font-size: 2.5rem;
+                top: 5px;
+            }
+            
+            .start-screen, .game-over-screen {
+                padding: 20px;
+            }
+            
+            .start-screen h2, .game-over-screen h2 {
+                font-size: 2rem;
+                margin-bottom: 10px;
+            }
+            
+            .instructions {
+                font-size: 1rem;
+                margin: 15px 0;
+            }
+            
+            .start-btn, .restart-btn {
+                padding: 12px 25px;
+                font-size: 1.2rem;
+                margin-top: 10px;
             }
         }
     </style>
-    </head>
+</head>
 <body>
-    <div class="game-container">
-        <div class="header">
-            <h1 class="game-title">LK FLY BIRD</h1>
-            <p class="subtitle">Help LK Bird fly through the obstacles!</p>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-overlay">
+        <div class="game-title">LK FLY BIRD</div>
+        <div class="score-display">0</div>
+        
+        <div id="startScreen" class="start-screen">
+            <h2>READY TO FLY?</h2>
+            <div class="instructions">
+                <p><i class="fas fa-mouse-pointer"></i> Tap or Click to Fly</p>
+                <p><i class="fas fa-arrow-up"></i> SPACE or UP ARROW</p>
+                <p><i class="fas fa-bolt"></i> Avoid the Pipes!</p>
+            </div>
+            <button id="startBtn" class="start-btn">START FLYING!</button>
+            <div class="high-score">Best: <span id="highScoreValue">0</span></div>
         </div>
         
-        <div class="game-wrapper">
-            <canvas id="gameCanvas" width="800" height="500"></canvas>
-            
-            <div class="ui-overlay">
-                <div class="score-display">0</div>
-                
-                <div id="startScreen" class="start-screen">
-                    <h2>READY TO FLY?</h2>
-                    <div class="instructions">
-                        <p><i class="fas fa-mouse-pointer"></i> Click or tap to make LK Bird fly upward</p>
-                        <p><i class="fas fa-arrow-up"></i> Press SPACE or UP ARROW to flap wings</p>
-                        <p><i class="fas fa-bolt"></i> Avoid the green pipes and don't hit the ground!</p>
-                        <p><i class="fas fa-star"></i> Each pipe you pass gives you 1 point</p>
-                    </div>
-                    <button id="startBtn" class="start-btn">START FLYING!</button>
-                    <div class="high-score">High Score: <span id="highScoreValue">0</span></div>
-                </div>
-                
-                <div id="gameOverScreen" class="game-over-screen hidden">
-                    <h2>GAME OVER!</h2>
-                    <div class="score-result">
-                        <p>Your Score: <span id="finalScore">0</span></p>
-                        <p>Best Score: <span id="bestScore">0</span></p>
-                    </div>
-                    <button id="restartBtn" class="restart-btn">PLAY AGAIN</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <div class="control-item">
-                <h3>CONTROLS</h3>
-                <p>CLICK / TAP - Flap</p>
-                <p>SPACE / UP ARROW - Flap</p>
-            </div>
-            <div class="control-item">
-                <h3>SCORING</h3>
-                <p>+1 point for each pipe passed</p>
-                <p>Beat your high score!</p>
-            </div>
-            <div class="control-item">
-                <h3>TIPS</h3>
-                <p>Find a consistent rhythm</p>
-                <p>Don't fly too high or too low</p>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Created with <i class="fas fa-heart" style="color: #ff0000;"></i> by LK Games | 
-               <a href="#" id="muteBtn"><i class="fas fa-volume-up"></i> Toggle Sound</a>
-            </p>
+        <div id="gameOverScreen" class="game-over-screen hidden">
+            <h2>GAME OVER!</h2>
+            <div class="final-score">Score: <span id="finalScore">0</span></div>
+            <div class="best-score">Best: <span id="bestScore">0</span></div>
+            <button id="restartBtn" class="restart-btn">PLAY AGAIN</button>
         </div>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script>
         // Game variables
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const scoreDisplay = document.querySelector('.score-display');
-        const finalScore = document.getElementById('finalScore');
-        const bestScore = document.getElementById('bestScore');
-        const highScoreValue = document.getElementById('highScoreValue');
-        const muteBtn = document.getElementById('muteBtn');
-
+        let canvas, ctx;
+        let startScreen, gameOverScreen, startBtn, restartBtn;
+        let scoreDisplay, finalScore, bestScore, highScoreValue;
+        
         // Game state
         let game = {
             running: false,
@@ -295,11 +267,11 @@
             speed: 3,
             soundEnabled: true
         };
-
+        
         // Bird properties
         const bird = {
             x: 150,
-            y: canvas.height / 2,
+            y: 300,
             width: 40,
             height: 30,
             gravity: 0.6,
@@ -309,16 +281,43 @@
             wingAngle: 0,
             wingSpeed: 0.3
         };
-
+        
         // Pipes array
         let pipes = [];
         const pipeWidth = 70;
         const pipeGap = 150;
         const pipeFrequency = 120; // frames between pipes
         let frameCount = 0;
-
+        
+        // Initialize canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Adjust bird position for new canvas size
+            if (!game.running) {
+                bird.x = canvas.width * 0.2;
+                bird.y = canvas.height / 2;
+            }
+        }
+        
         // Initialize game
         function init() {
+            // Get DOM elements
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            startScreen = document.getElementById('startScreen');
+            gameOverScreen = document.getElementById('gameOverScreen');
+            startBtn = document.getElementById('startBtn');
+            restartBtn = document.getElementById('restartBtn');
+            scoreDisplay = document.querySelector('.score-display');
+            finalScore = document.getElementById('finalScore');
+            bestScore = document.getElementById('bestScore');
+            highScoreValue = document.getElementById('highScoreValue');
+            
+            // Set canvas size
+            resizeCanvas();
+            
             // Set high score display
             highScoreValue.textContent = game.highScore;
             
@@ -328,6 +327,7 @@
             scoreDisplay.textContent = game.score;
             
             // Reset bird
+            bird.x = canvas.width * 0.2;
             bird.y = canvas.height / 2;
             bird.velocity = 0;
             bird.wingAngle = 0;
@@ -340,7 +340,7 @@
             startScreen.classList.remove('hidden');
             gameOverScreen.classList.add('hidden');
         }
-
+        
         // Draw bird
         function drawBird() {
             ctx.save();
@@ -382,7 +382,8 @@
             
             ctx.restore();
         }
-      // Draw pipes
+        
+        // Draw pipes
         function drawPipes() {
             pipes.forEach(pipe => {
                 // Draw top pipe
@@ -401,7 +402,7 @@
                 ctx.fillStyle = '#228B22';
                 ctx.fillRect(pipe.x - 5, pipe.bottom, pipeWidth + 10, 20);
                 
-                // Draw LK logo on pipes (every other pipe)
+                // Draw LK logo on pipes
                 if (pipe.hasLogo) {
                     ctx.fillStyle = '#FFD700';
                     ctx.font = 'bold 20px Arial';
@@ -411,7 +412,7 @@
                 }
             });
         }
-
+        
         // Draw background
         function drawBackground() {
             // Sky
@@ -431,18 +432,18 @@
                 ctx.fillRect(i, canvas.height - 30, 10, 5);
             }
         }
-
+        
         // Draw clouds
         function drawClouds() {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             
-            // Static cloud positions
+            // Cloud positions based on canvas size
             const clouds = [
-                {x: 200, y: 80, size: 30},
-                {x: 400, y: 120, size: 40},
-                {x: 600, y: 60, size: 35},
-                {x: 100, y: 150, size: 25},
-                {x: 700, y: 180, size: 45}
+                {x: canvas.width * 0.2, y: canvas.height * 0.15, size: canvas.height * 0.05},
+                {x: canvas.width * 0.4, y: canvas.height * 0.2, size: canvas.height * 0.07},
+                {x: canvas.width * 0.6, y: canvas.height * 0.1, size: canvas.height * 0.06},
+                {x: canvas.width * 0.1, y: canvas.height * 0.25, size: canvas.height * 0.04},
+                {x: canvas.width * 0.8, y: canvas.height * 0.3, size: canvas.height * 0.08}
             ];
             
             clouds.forEach(cloud => {
@@ -454,12 +455,14 @@
                 ctx.fill();
             });
         }
-
+        
         // Update pipes
         function updatePipes() {
             // Add new pipe
             if (frameCount % pipeFrequency === 0) {
-                const top = Math.floor(Math.random() * (canvas.height - pipeGap - 100)) + 50;
+                const minTop = canvas.height * 0.1;
+                const maxTop = canvas.height * 0.7;
+                const top = Math.floor(Math.random() * (maxTop - minTop)) + minTop;
                 const hasLogo = Math.random() > 0.5;
                 
                 pipes.push({
@@ -500,7 +503,7 @@
             
             frameCount++;
         }
-
+        
         // Check collisions
         function checkCollision() {
             // Ground collision
@@ -526,14 +529,14 @@
             
             return false;
         }
-
+        
         // Update bird
         function updateBird() {
             // Apply gravity
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
         }
-
+        
         // Make bird flap
         function flap() {
             bird.velocity = bird.lift;
@@ -543,7 +546,8 @@
                 playFlapSound();
             }
         }
-       // Game loop
+        
+        // Game loop
         function gameLoop() {
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -570,7 +574,7 @@
                 requestAnimationFrame(gameLoop);
             }
         }
-
+        
         // Start game
         function startGame() {
             game.running = true;
@@ -580,7 +584,7 @@
             // Start game loop
             requestAnimationFrame(gameLoop);
         }
-
+        
         // End game
         function endGame() {
             game.running = false;
@@ -606,8 +610,8 @@
                 playGameOverSound();
             }
         }
-
-        // Sound functions (using Web Audio API)
+        
+        // Sound functions
         function playFlapSound() {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -629,7 +633,7 @@
                 // Audio context not supported
             }
         }
-
+        
         function playScoreSound() {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -651,7 +655,7 @@
                 // Audio context not supported
             }
         }
-
+        
         function playGameOverSound() {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -673,48 +677,53 @@
                 // Audio context not supported
             }
         }
-
+        
         // Event listeners
-        startBtn.addEventListener('click', startGame);
-        restartBtn.addEventListener('click', () => {
-            init();
-            startGame();
-        });
-
-        // Game controls
-        canvas.addEventListener('click', () => {
-            if (game.running) {
-                flap();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if ((e.code === 'Space' || e.code === 'ArrowUp') && game.running) {
-                flap();
-                e.preventDefault();
-            }
-            
-            // Start game with space if on start screen
-            if (e.code === 'Space' && !game.running && !gameOverScreen.classList.contains('hidden')) {
+        function setupEventListeners() {
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', () => {
+                init();
                 startGame();
-            }
-        });
-
-        // Mute button
-        muteBtn.addEventListener('click', () => {
-            game.soundEnabled = !game.soundEnabled;
-            const icon = muteBtn.querySelector('i');
-            if (game.soundEnabled) {
-                icon.className = 'fas fa-volume-up';
-                muteBtn.innerHTML = '<i class="fas fa-volume-up"></i> Sound: ON';
-            } else {
-                icon.className = 'fas fa-volume-mute';
-                muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i> Sound: OFF';
-            }
-        });
-
+            });
+            
+            // Game controls
+            canvas.addEventListener('click', () => {
+                if (game.running) {
+                    flap();
+                }
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if ((e.code === 'Space' || e.code === 'ArrowUp') && game.running) {
+                    flap();
+                    e.preventDefault();
+                }
+                
+                // Start game with space if on start screen
+                if (e.code === 'Space' && !game.running && !gameOverScreen.classList.contains('hidden')) {
+                    startGame();
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+            
+            // Touch controls for mobile
+            document.addEventListener('touchstart', (e) => {
+                if (game.running) {
+                    flap();
+                    e.preventDefault();
+                }
+            });
+        }
+        
         // Initialize game on load
-        window.addEventListener('load', init);
+        window.addEventListener('load', () => {
+            init();
+            setupEventListeners();
+        });
     </script>
 </body>
 </html>
