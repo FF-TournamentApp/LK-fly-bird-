@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LK Fly Bird</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        
+        .game-title {
+            font-size: 3.5rem;
+            color: #fff;
+            text-shadow: 3px 3px 0 #ff9900, 6px 6px 0 rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #70c5ce;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            border: 8px solid #4a752c;
+            cursor: pointer;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+        
+        .score-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 3px 3px 0 #000;
+            margin-top: 20px;
+            pointer-events: none;
+        }
+        
+        .start-screen, .game-over-screen {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            pointer-events: all;
+            max-width: 80%;
+        }
+        
+        .start-screen h2, .game-over-screen h2 {
+            font-size: 2.5rem;
+            color: #ff6600;
+            margin-bottom: 20px;
+        }
+        
+        .instructions {
+            margin: 20px 0;
+            font-size: 1.2rem;
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        .instructions i {
+            color: #ff6600;
+            margin-right: 8px;
+        }
+        
+        .start-btn, .restart-btn {
+            background: linear-gradient(to bottom, #ff9900, #ff6600);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 5px 0 #cc5200;
+        }
+        
+        .start-btn:hover, .restart-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #cc5200;
+        }
+        
+        .start-btn:active, .restart-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 4px 0 #cc5200;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .control-item {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .control-item h3 {
+            color: #ff6600;
+            margin-bottom: 10px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: white;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .footer a {
+            color: #ffcc00;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .high-score {
+            font-size: 1.5rem;
+            color: #ffcc00;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2.5rem;
+            }
+            
+            #gameCanvas {
+                width: 100%;
+                height: auto;
+            }
+            
+            .score-display {
+                font-size: 3rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+    </head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1 class="game-title">LK FLY BIRD</h1>
+            <p class="subtitle">Help LK Bird fly through the obstacles!</p>
+        </div>
+        
+        <div class="game-wrapper">
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+            
+            <div class="ui-overlay">
+                <div class="score-display">0</div>
+                
+                <div id="startScreen" class="start-screen">
+                    <h2>READY TO FLY?</h2>
+                    <div class="instructions">
+                        <p><i class="fas fa-mouse-pointer"></i> Click or tap to make LK Bird fly upward</p>
+                        <p><i class="fas fa-arrow-up"></i> Press SPACE or UP ARROW to flap wings</p>
+                        <p><i class="fas fa-bolt"></i> Avoid the green pipes and don't hit the ground!</p>
+                        <p><i class="fas fa-star"></i> Each pipe you pass gives you 1 point</p>
+                    </div>
+                    <button id="startBtn" class="start-btn">START FLYING!</button>
+                    <div class="high-score">High Score: <span id="highScoreValue">0</span></div>
+                </div>
+                
+                <div id="gameOverScreen" class="game-over-screen hidden">
+                    <h2>GAME OVER!</h2>
+                    <div class="score-result">
+                        <p>Your Score: <span id="finalScore">0</span></p>
+                        <p>Best Score: <span id="bestScore">0</span></p>
+                    </div>
+                    <button id="restartBtn" class="restart-btn">PLAY AGAIN</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-item">
+                <h3>CONTROLS</h3>
+                <p>CLICK / TAP - Flap</p>
+                <p>SPACE / UP ARROW - Flap</p>
+            </div>
+            <div class="control-item">
+                <h3>SCORING</h3>
+                <p>+1 point for each pipe passed</p>
+                <p>Beat your high score!</p>
+            </div>
+            <div class="control-item">
+                <h3>TIPS</h3>
+                <p>Find a consistent rhythm</p>
+                <p>Don't fly too high or too low</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Created with <i class="fas fa-heart" style="color: #ff0000;"></i> by LK Games | 
+               <a href="#" id="muteBtn"><i class="fas fa-volume-up"></i> Toggle Sound</a>
+            </p>
+        </div>
+    </div>
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const scoreDisplay = document.querySelector('.score-display');
+        const finalScore = document.getElementById('finalScore');
+        const bestScore = document.getElementById('bestScore');
+        const highScoreValue = document.getElementById('highScoreValue');
+        const muteBtn = document.getElementById('muteBtn');
+
+        // Game state
+        let game = {
+            running: false,
+            score: 0,
+            highScore: localStorage.getItem('lkFlyBirdHighScore') || 0,
+            speed: 3,
+            soundEnabled: true
+        };
+
+        // Bird properties
+        const bird = {
+            x: 150,
+            y: canvas.height / 2,
+            width: 40,
+            height: 30,
+            gravity: 0.6,
+            lift: -12,
+            velocity: 0,
+            color: '#FFD700',
+            wingAngle: 0,
+            wingSpeed: 0.3
+        };
+
+        // Pipes array
+        let pipes = [];
+        const pipeWidth = 70;
+        const pipeGap = 150;
+        const pipeFrequency = 120; // frames between pipes
+        let frameCount = 0;
+
+        // Initialize game
+        function init() {
+            // Set high score display
+            highScoreValue.textContent = game.highScore;
+            
+            // Reset game state
+            game.score = 0;
+            game.speed = 3;
+            scoreDisplay.textContent = game.score;
+            
+            // Reset bird
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+            bird.wingAngle = 0;
+            
+            // Clear pipes
+            pipes = [];
+            frameCount = 0;
+            
+            // Hide/show screens
+            startScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('hidden');
+        }
+
+        // Draw bird
+        function drawBird() {
+            ctx.save();
+            
+            // Draw bird body
+            ctx.fillStyle = bird.color;
+            ctx.beginPath();
+            ctx.ellipse(bird.x, bird.y, bird.width/2, bird.height/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw bird eye
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(bird.x + 10, bird.y - 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw bird beak
+            ctx.fillStyle = '#FF6600';
+            ctx.beginPath();
+            ctx.moveTo(bird.x + 20, bird.y);
+            ctx.lineTo(bird.x + 35, bird.y);
+            ctx.lineTo(bird.x + 20, bird.y + 8);
+            ctx.fill();
+            
+            // Draw bird wing (animated)
+            ctx.fillStyle = '#FFAA00';
+            ctx.save();
+            ctx.translate(bird.x - 5, bird.y + 5);
+            ctx.rotate(Math.sin(bird.wingAngle) * 0.5);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 15, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // Update wing angle for animation
+            if (game.running) {
+                bird.wingAngle += bird.wingSpeed;
+            }
+            
+            ctx.restore();
+        }
+      // Draw pipes
+        function drawPipes() {
+            pipes.forEach(pipe => {
+                // Draw top pipe
+                ctx.fillStyle = '#2E8B57';
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+                
+                // Draw top pipe cap
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(pipe.x - 5, pipe.top - 20, pipeWidth + 10, 20);
+                
+                // Draw bottom pipe
+                ctx.fillStyle = '#2E8B57';
+                ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+                
+                // Draw bottom pipe cap
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(pipe.x - 5, pipe.bottom, pipeWidth + 10, 20);
+                
+                // Draw LK logo on pipes (every other pipe)
+                if (pipe.hasLogo) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('LK', pipe.x + pipeWidth/2, pipe.top - 40);
+                    ctx.fillText('LK', pipe.x + pipeWidth/2, pipe.bottom + 30);
+                }
+            });
+        }
+
+        // Draw background
+        function drawBackground() {
+            // Sky
+            ctx.fillStyle = '#70c5ce';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Clouds
+            drawClouds();
+            
+            // Ground
+            ctx.fillStyle = '#4a752c';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+            
+            // Grass detail
+            ctx.fillStyle = '#5a8a3c';
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.fillRect(i, canvas.height - 30, 10, 5);
+            }
+        }
+
+        // Draw clouds
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            
+            // Static cloud positions
+            const clouds = [
+                {x: 200, y: 80, size: 30},
+                {x: 400, y: 120, size: 40},
+                {x: 600, y: 60, size: 35},
+                {x: 100, y: 150, size: 25},
+                {x: 700, y: 180, size: 45}
+            ];
+            
+            clouds.forEach(cloud => {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size * 0.8, cloud.y - cloud.size * 0.3, cloud.size * 0.7, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size * 1.5, cloud.y, cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size * 0.8, cloud.y + cloud.size * 0.3, cloud.size * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Update pipes
+        function updatePipes() {
+            // Add new pipe
+            if (frameCount % pipeFrequency === 0) {
+                const top = Math.floor(Math.random() * (canvas.height - pipeGap - 100)) + 50;
+                const hasLogo = Math.random() > 0.5;
+                
+                pipes.push({
+                    x: canvas.width,
+                    top: top,
+                    bottom: top + pipeGap,
+                    passed: false,
+                    hasLogo: hasLogo
+                });
+            }
+            
+            // Update pipe positions
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= game.speed;
+                
+                // Check if bird passed the pipe
+                if (!pipes[i].passed && pipes[i].x + pipeWidth < bird.x) {
+                    pipes[i].passed = true;
+                    game.score++;
+                    scoreDisplay.textContent = game.score;
+                    
+                    // Increase speed slightly every 5 pipes
+                    if (game.score % 5 === 0) {
+                        game.speed += 0.2;
+                    }
+                    
+                    // Play score sound if enabled
+                    if (game.soundEnabled) {
+                        playScoreSound();
+                    }
+                }
+                
+                // Remove pipes that are off screen
+                if (pipes[i].x < -pipeWidth) {
+                    pipes.splice(i, 1);
+                }
+            }
+            
+            frameCount++;
+        }
+
+        // Check collisions
+        function checkCollision() {
+            // Ground collision
+            if (bird.y + bird.height/2 >= canvas.height - 30) {
+                return true;
+            }
+            
+            // Ceiling collision
+            if (bird.y - bird.height/2 <= 0) {
+                return true;
+            }
+            
+            // Pipe collisions
+            for (let pipe of pipes) {
+                if (
+                    bird.x + bird.width/2 > pipe.x &&
+                    bird.x - bird.width/2 < pipe.x + pipeWidth &&
+                    (bird.y - bird.height/2 < pipe.top || bird.y + bird.height/2 > pipe.bottom)
+                ) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        // Update bird
+        function updateBird() {
+            // Apply gravity
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+        }
+
+        // Make bird flap
+        function flap() {
+            bird.velocity = bird.lift;
+            
+            // Play flap sound if enabled
+            if (game.soundEnabled) {
+                playFlapSound();
+            }
+        }
+       // Game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background
+            drawBackground();
+            
+            // Update and draw pipes
+            updatePipes();
+            drawPipes();
+            
+            // Update and draw bird
+            updateBird();
+            drawBird();
+            
+            // Check for collisions
+            if (checkCollision()) {
+                endGame();
+                return;
+            }
+            
+            // Continue game loop
+            if (game.running) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Start game
+        function startGame() {
+            game.running = true;
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        // End game
+        function endGame() {
+            game.running = false;
+            
+            // Update high score
+            if (game.score > game.highScore) {
+                game.highScore = game.score;
+                localStorage.setItem('lkFlyBirdHighScore', game.highScore);
+            }
+            
+            // Update UI
+            finalScore.textContent = game.score;
+            bestScore.textContent = game.highScore;
+            highScoreValue.textContent = game.highScore;
+            
+            // Show game over screen
+            setTimeout(() => {
+                gameOverScreen.classList.remove('hidden');
+            }, 500);
+            
+            // Play game over sound if enabled
+            if (game.soundEnabled) {
+                playGameOverSound();
+            }
+        }
+
+        // Sound functions (using Web Audio API)
+        function playFlapSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                // Audio context not supported
+            }
+        }
+
+        function playScoreSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 1200;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                // Audio context not supported
+            }
+        }
+
+        function playGameOverSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 300;
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                // Audio context not supported
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', () => {
+            init();
+            startGame();
+        });
+
+        // Game controls
+        canvas.addEventListener('click', () => {
+            if (game.running) {
+                flap();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && game.running) {
+                flap();
+                e.preventDefault();
+            }
+            
+            // Start game with space if on start screen
+            if (e.code === 'Space' && !game.running && !gameOverScreen.classList.contains('hidden')) {
+                startGame();
+            }
+        });
+
+        // Mute button
+        muteBtn.addEventListener('click', () => {
+            game.soundEnabled = !game.soundEnabled;
+            const icon = muteBtn.querySelector('i');
+            if (game.soundEnabled) {
+                icon.className = 'fas fa-volume-up';
+                muteBtn.innerHTML = '<i class="fas fa-volume-up"></i> Sound: ON';
+            } else {
+                icon.className = 'fas fa-volume-mute';
+                muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i> Sound: OFF';
+            }
+        });
+
+        // Initialize game on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
