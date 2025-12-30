@@ -258,19 +258,6 @@
         <img id="pipeImage" src="https://iili.io/fXCQ3Fe.md.jpg" alt="Pipe">
     </div>
 
-    <!-- Audio elements for reliable sound playback -->
-    <audio id="flapSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-bird-flapping-1125.mp3" type="audio/mpeg">
-    </audio>
-    
-    <audio id="scoreSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
-    </audio>
-    
-    <audio id="collisionSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-cartoon-talking-0327.mp3" type="audio/mpeg">
-    </audio>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script>
         // Game variables
@@ -278,8 +265,9 @@
         let startScreen, gameOverScreen, startBtn, restartBtn;
         let scoreDisplay, finalScore, bestScore, highScoreValue;
         
-        // Audio elements
-        let flapSound, scoreSound, collisionSound;
+        // Audio context for sound
+        let audioContext;
+        let soundEnabled = true;
         
         // Load images
         const birdImg = new Image();
@@ -293,20 +281,19 @@
             running: false,
             score: 0,
             highScore: localStorage.getItem('lkFlyBirdHighScore') || 0,
-            speed: 1.5, // Even slower initial speed
-            soundEnabled: true,
+            speed: 1, // Ultra slow initial speed
             imagesLoaded: 0,
             totalImages: 2
         };
         
-        // Bird properties - ULTRA GENTLE PHYSICS
+        // Bird properties - ULTRA SLOW PHYSICS
         const bird = {
             x: 150,
             y: 300,
-            width: 55, // Slightly smaller for better control
-            height: 55,
-            gravity: 0.15, // EXTREMELY low gravity - bird falls VERY slowly
-            lift: -6, // Very small jump - barely goes up
+            width: 50, 
+            height: 50,
+            gravity: 0.08, // EXTREMELY LOW gravity - bird falls VERY VERY slowly
+            lift: -4, // VERY SMALL jump - barely goes up at all
             velocity: 0,
             rotation: 0
         };
@@ -314,8 +301,8 @@
         // Pipes array
         let pipes = [];
         const pipeWidth = 80;
-        const pipeGap = 220; // Larger gap for easier gameplay
-        const pipeFrequency = 160; // Much slower pipe generation
+        const pipeGap = 240; // Very large gap for super easy gameplay
+        const pipeFrequency = 180; // Extremely slow pipe generation
         let frameCount = 0;
         
         // Collision tracker
@@ -354,6 +341,84 @@
             checkImagesLoaded();
         };
         
+        // Initialize audio context
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("Audio context created successfully");
+            } catch (e) {
+                console.log("Web Audio API is not supported in this browser");
+                soundEnabled = false;
+            }
+        }
+        
+        // Play simple beep sound
+        function playBeepSound(frequency, duration, volume = 0.1) {
+            if (!soundEnabled || !audioContext) return;
+            
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log("Sound error:", e);
+            }
+        }
+        
+        // Play flap sound
+        function playFlapSound() {
+            playBeepSound(600, 0.1, 0.08);
+        }
+        
+        // Play score sound
+        function playScoreSound() {
+            playBeepSound(800, 0.15, 0.1);
+            setTimeout(() => playBeepSound(1000, 0.1, 0.08), 50);
+        }
+        
+        // Play collision sound ("Oh my god wow" simulation)
+        function playCollisionSound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            try {
+                // Create multiple oscillators for "Oh my god wow" effect
+                const frequencies = [200, 300, 250, 150];
+                const durations = [0.2, 0.3, 0.25, 0.4];
+                
+                for (let i = 0; i < frequencies.length; i++) {
+                    setTimeout(() => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.value = frequencies[i];
+                        oscillator.type = 'sawtooth';
+                        
+                        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + durations[i]);
+                        
+                        oscillator.start();
+                        oscillator.stop(audioContext.currentTime + durations[i]);
+                    }, i * 100);
+                }
+            } catch (e) {
+                console.log("Collision sound error:", e);
+            }
+        }
+        
         // Initialize game
         function init() {
             // Get DOM elements
@@ -368,10 +433,8 @@
             bestScore = document.getElementById('bestScore');
             highScoreValue = document.getElementById('highScoreValue');
             
-            // Get audio elements
-            flapSound = document.getElementById('flapSound');
-            scoreSound = document.getElementById('scoreSound');
-            collisionSound = document.getElementById('collisionSound');
+            // Initialize audio
+            initAudio();
             
             // Set canvas size
             resizeCanvas();
@@ -381,7 +444,7 @@
             
             // Reset game state
             game.score = 0;
-            game.speed = 1.5; // Reset to very slow speed
+            game.speed = 1; // Reset to ultra slow speed
             scoreDisplay.textContent = game.score;
             
             // Reset bird
@@ -410,7 +473,7 @@
             ctx.translate(bird.x, bird.y);
             
             // Very gentle rotation
-            bird.rotation = bird.velocity * 0.01;
+            bird.rotation = bird.velocity * 0.005; // Even less rotation
             ctx.rotate(bird.rotation);
             
             // Draw bird image if loaded, otherwise draw placeholder
@@ -535,8 +598,8 @@
         function updatePipes() {
             // Add new pipe
             if (frameCount % pipeFrequency === 0) {
-                const minTop = canvas.height * 0.2; // Higher minimum for easier gameplay
-                const maxTop = canvas.height * 0.6; // Lower maximum for easier gameplay
+                const minTop = canvas.height * 0.25; // Higher minimum
+                const maxTop = canvas.height * 0.55; // Lower maximum
                 const top = Math.floor(Math.random() * (maxTop - minTop)) + minTop;
                 
                 pipes.push({
@@ -557,16 +620,13 @@
                     game.score++;
                     scoreDisplay.textContent = game.score;
                     
-                    // Very slight speed increase
-                    if (game.score % 10 === 0) {
-                        game.speed += 0.03; // Almost unnoticeable increase
+                    // Almost no speed increase
+                    if (game.score % 15 === 0) {
+                        game.speed += 0.01; // Barely noticeable
                     }
                     
-                    // Play score sound if enabled
-                    if (game.soundEnabled && scoreSound) {
-                        scoreSound.currentTime = 0;
-                        scoreSound.play().catch(e => console.log("Score sound error:", e));
-                    }
+                    // Play score sound
+                    playScoreSound();
                 }
                 
                 // Remove pipes that are off screen
@@ -603,10 +663,8 @@
                 if (birdRight > pipe.x && birdLeft < pipeRight) {
                     // Check if bird touches top or bottom pipe
                     if (birdTop < pipe.top || birdBottom > pipe.bottom) {
-                        if (!hasCollided && game.soundEnabled && collisionSound) {
-                            // Play collision sound
-                            collisionSound.currentTime = 0;
-                            collisionSound.play().catch(e => console.log("Collision sound error:", e));
+                        if (!hasCollided) {
+                            playCollisionSound(); // "Oh my god wow" sound
                             hasCollided = true;
                         }
                         return true;
@@ -617,20 +675,20 @@
             return false;
         }
         
-        // Update bird - VERY GENTLE PHYSICS
+        // Update bird - ULTRA SLOW PHYSICS
         function updateBird() {
             // Apply EXTREMELY low gravity
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
             
-            // Limit maximum falling speed (VERY slow)
-            if (bird.velocity > 6) {
-                bird.velocity = 6;
+            // Limit maximum falling speed (EXTREMELY slow)
+            if (bird.velocity > 4) {
+                bird.velocity = 4;
             }
             
             // Limit upward speed (very low)
-            if (bird.velocity < -8) {
-                bird.velocity = -8;
+            if (bird.velocity < -6) {
+                bird.velocity = -6;
             }
         }
         
@@ -638,11 +696,8 @@
         function flap() {
             bird.velocity = bird.lift; // Very small upward force
             
-            // Play flap sound if enabled
-            if (game.soundEnabled && flapSound) {
-                flapSound.currentTime = 0;
-                flapSound.play().catch(e => console.log("Flap sound error:", e));
-            }
+            // Play flap sound
+            playFlapSound();
         }
         
         // Game loop
@@ -753,26 +808,24 @@
                     e.preventDefault();
                 }
             });
+            
+            // User interaction for audio (required by browsers)
+            document.addEventListener('click', function initAudioOnClick() {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => {
+                        console.log("Audio resumed after user interaction");
+                        // Play a test sound
+                        playBeepSound(300, 0.1, 0.05);
+                    });
+                }
+                document.removeEventListener('click', initAudioOnClick);
+            });
         }
         
         // Initialize game on load
         window.addEventListener('load', () => {
             init();
             setupEventListeners();
-            
-            // Test sounds to ensure they're loaded
-            setTimeout(() => {
-                if (flapSound) {
-                    flapSound.volume = 0.1;
-                    flapSound.play().then(() => {
-                        flapSound.pause();
-                        flapSound.currentTime = 0;
-                        console.log("Sounds are working properly!");
-                    }).catch(e => {
-                        console.log("Browser requires user interaction for sounds. Click to enable sounds.");
-                    });
-                }
-            }, 1000);
         });
     </script>
 </body>
